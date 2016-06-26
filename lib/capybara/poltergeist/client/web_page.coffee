@@ -31,9 +31,6 @@ class Poltergeist.WebPage
     for callback in WebPage.CALLBACKS
       @bindCallback(callback)
 
-    if phantom.version.major < 2
-      @._overrideNativeEvaluate()
-
   for command in @COMMANDS
     do (command) =>
       @prototype[command] =
@@ -340,45 +337,20 @@ class Poltergeist.WebPage
     @sendEvent(name, x, y, button)
 
   evaluate: (fn, args...) ->
-<<<<<<< HEAD
     this.injectAgent()
     this.native().evaluate("function() { result = #{this.stringifyCall(fn)};
       return (result == null) ? undefined : result; }", args...)
 
   execute: (fn, args...) ->
     this.native().evaluate("function() { #{this.stringifyCall(fn)} }", args...)
-=======
-    @injectAgent()
-    JSON.parse @sanitize(@native().evaluate("function() { return PoltergeistAgent.stringify(#{this.stringifyCall(fn, args)}) }"))
-
-  sanitize: (potential_string) ->
-    if typeof(potential_string) == "string"
-      # JSON doesn't like \r or \n in strings unless escaped
-      potential_string.replace("\n","\\n").replace("\r","\\r")
-    else
-      potential_string
-
-  execute: (fn, args...) ->
-    @native().evaluate("function() { #{this.stringifyCall(fn, args)} }")
->>>>>>> Change minimum version requirements
 
   stringifyCall: (fn) ->
     "(#{fn.toString()}).apply(this, arguments)"
 
   bindCallback: (name) ->
-<<<<<<< HEAD
     @native()[name] = =>
       result = @[name + 'Native'].apply(@, arguments) if @[name + 'Native']? # For internal callbacks
       @[name].apply(@, arguments) if result != false && @[name]? # For externally set callbacks
-=======
-    that = this
-    @native()[name] = ->
-      if that[name + 'Native']? # For internal callbacks
-        result = that[name + 'Native'].apply(that, arguments)
-
-      if result != false && that[name]? # For externally set callbacks
-        that[name].apply(that, arguments)
->>>>>>> Change minimum version requirements
     return true
 
   # Any error raised here or inside the evaluate will get reported to
@@ -415,95 +387,4 @@ class Poltergeist.WebPage
     return parser.href
 
   clearMemoryCache: ->
-    clearMemoryCache = this.native().clearMemoryCache
-    if typeof clearMemoryCache == "function"
-      clearMemoryCache()
-    else
-      throw new Poltergeist.UnsupportedFeature("clearMemoryCache is supported since PhantomJS 2.0.0")
-
-  _overrideNativeEvaluate: ->
-    # PhantomJS 1.9.x WebPage#evaluate depends on the browser context  JSON, this replaces it
-    # with the evaluate from 2.1.1 which uses the PhantomJS JSON
-    @_native.evaluate = `function (func, args) {
-        function quoteString(str) {
-            var c, i, l = str.length, o = '"';
-            for (i = 0; i < l; i += 1) {
-                c = str.charAt(i);
-                if (c >= ' ') {
-                    if (c === '\\' || c === '"') {
-                        o += '\\';
-                    }
-                    o += c;
-                } else {
-                    switch (c) {
-                    case '\b':
-                        o += '\\b';
-                        break;
-                    case '\f':
-                        o += '\\f';
-                        break;
-                    case '\n':
-                        o += '\\n';
-                        break;
-                    case '\r':
-                        o += '\\r';
-                        break;
-                    case '\t':
-                        o += '\\t';
-                        break;
-                    default:
-                        c = c.charCodeAt();
-                        o += '\\u00' + Math.floor(c / 16).toString(16) +
-                            (c % 16).toString(16);
-                    }
-                }
-            }
-            return o + '"';
-        }
-
-        function detectType(value) {
-            var s = typeof value;
-            if (s === 'object') {
-                if (value) {
-                    if (value instanceof Array) {
-                        s = 'array';
-                    } else if (value instanceof RegExp) {
-                        s = 'regexp';
-                    } else if (value instanceof Date) {
-                        s = 'date';
-                    }
-                } else {
-                    s = 'null';
-                }
-            }
-            return s;
-        }
-
-        var str, arg, argType, i, l;
-        if (!(func instanceof Function || typeof func === 'string' || func instanceof String)) {
-            throw "Wrong use of WebPage#evaluate";
-        }
-        str = 'function() { return (' + func.toString() + ')(';
-        for (i = 1, l = arguments.length; i < l; i++) {
-            arg = arguments[i];
-            argType = detectType(arg);
-
-            switch (argType) {
-            case "object":      //< for type "object"
-            case "array":       //< for type "array"
-                str += JSON.stringify(arg) + ","
-                break;
-            case "date":        //< for type "date"
-                str += "new Date(" + JSON.stringify(arg) + "),"
-                break;
-            case "string":      //< for type "string"
-                str += quoteString(arg) + ',';
-                break;
-            default:            // for types: "null", "number", "function", "regexp", "undefined"
-                str += arg + ',';
-                break;
-            }
-        }
-        str = str.replace(/,$/, '') + '); }';
-        return this.evaluateJavaScript(str);
-    };`
+    @native().clearMemoryCache
