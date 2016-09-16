@@ -317,18 +317,19 @@ class PoltergeistAgent.Node
     pos
 
   trigger: (name, element = @element) ->
-    if Node.EVENTS.MOUSE.indexOf(name) != -1
-      event = document.createEvent('MouseEvent')
-      event.initMouseEvent(
-        name, true, true, window, 0, 0, 0, 0, 0,
-        false, false, false, false, 0, null
-      )
-    else if Node.EVENTS.FOCUS.indexOf(name) != -1
-      event = @obtainEvent(name)
-    else if Node.EVENTS.FORM.indexOf(name) != -1
-      event = @obtainEvent(name)
-    else
-      throw "Unknown event"
+    switch
+      when name in Node.EVENTS.MOUSE
+        event = document.createEvent('MouseEvent')
+        event.initMouseEvent(
+          name, true, true, window, 0, 0, 0, 0, 0,
+          false, false, false, false, 0, null
+        )
+      when name in Node.EVENTS.FOCUS
+        event = @obtainEvent(name)
+      when name in Node.EVENTS.FORM
+        event = @obtainEvent(name)
+      else
+        throw "Unknown event"
 
     element.dispatchEvent(event)
 
